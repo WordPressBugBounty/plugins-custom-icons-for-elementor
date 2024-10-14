@@ -1,35 +1,53 @@
 <?php
 /**
-* Class for saving font uploads
-*
-* @package   Elementor Custom icons
-* @author    Michael Bourne
-* @license   GPL3
-* @link      https://ursa6.com
-* @since     0.1.0
-*/
+ * Class for saving font uploads
+ *
+ * @package   Elementor Custom icons
+ * @author    Michael Bourne
+ * @license   GPL3
+ * @link      https://ursa6.com
+ * @since     0.1.0
+ */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	return;
 }
 
+/**
+ * SaveFont_ECIcons
+ */
 class SaveFont_ECIcons extends ECIcons {
 
 
+	/**
+	 * Initializes the class by setting up AJAX actions based on the request.
+	 *
+	 * This method retrieves the 'action' parameter from the request and checks if it corresponds
+	 * to a callable method within the class. If so, it registers the method as an AJAX action
+	 * using the 'wp_ajax_' hook.
+	 *
+	 * @return void
+	 */
 	public function init() {
 
 		$action = $this->getRequest( 'action' );
 
-		// ajax events
+		// ajax events.
 		if ( ! empty( $action ) && is_callable( array( $this, $action ) ) ) {
 			add_action( 'wp_ajax_' . $action, array( $this, $action ) );
 		}
 	}
 
 
+
 	/**
-	 * Upload ZIP file
+	 * Saves the uploaded font file and processes its icons.
 	 *
+	 * This method verifies the nonce and user permissions before proceeding. It checks if the ZipArchive class
+	 * exists and handles the uploaded font file. The font file is extracted, and its icons are parsed and saved.
+	 * The method returns a JSON response indicating the status of the operation.
+	 *
+	 * @return void
 	 */
 	public function ec_icons_save_font() {
 
@@ -41,25 +59,45 @@ class SaveFont_ECIcons extends ECIcons {
 				die();
 			}
 
-			$file_name = $this->getRequest( 'file_name', 'font' );
+			$file_name = str_replace('.zip', '', $this->getRequest( 'file_name', 'font' ) ) ;
 
 			$result = array();
 
 			if ( ! empty( $_FILES ) && ! empty( $_FILES['source_file'] ) ) {
 
-				$zip = new ZipArchive;
+				// Check file type.
+				$file_type = wp_check_filetype( $_FILES['source_file']['name'] );
+				if ( 'zip' !== $file_type['ext'] ) {
+						$result['status_save'] = 'invalidfiletype';
+						echo json_encode( $result );
+						die();
+				}
+
+				$zip = new ZipArchive();
 				$res = $zip->open( $_FILES['source_file']['tmp_name'] );
-				if ( $res === true ) {
+				if ( true === $res ) {
+					// Check for PHP files in the archive.
+					for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+						$stat = $zip->statIndex( $i );
+						$file_extension = pathinfo( $stat['name'], PATHINFO_EXTENSION );
+						if ( strtolower( $file_extension ) === 'php' ) {
+								$result['status_save'] = 'invalidfiletype';
+								echo wp_json_encode( $result );
+								$zip->close();
+								die();
+						}
+					}
+
 					$ex = $zip->extractTo( $this->upload_dir . '/' . $file_name );
 					$zip->close();
-					if ( $ex === false ) {
+					if ( false === $ex ) {
 						$result['status_save'] = 'failedextract';
-						echo json_encode( $result );
+						echo wp_json_encode( $result );
 						die();
 					}
 				} else {
 					$result['status_save'] = 'failedopen';
-					echo json_encode( $result );
+					echo wp_json_encode( $result );
 					die();
 				}
 
@@ -89,18 +127,17 @@ class SaveFont_ECIcons extends ECIcons {
 				$result['status_save'] = 'emptyfile';
 			}
 
-			echo json_encode( $result );
+			echo wp_json_encode( $result );
 		}
 
 		die();
-
 	}
 
 	/**
 	 * Update Options table
 	 *
-	 * @param array $font_data
-	 * @param string $status
+	 * @param array  $font_data Font data.
+	 * @param string $status Status.
 	 * @return null|string
 	 */
 	private function update_options( $font_data, $status ) {
@@ -120,7 +157,7 @@ class SaveFont_ECIcons extends ECIcons {
 
 		$options[ $font_data['name'] ] = array(
 			'status' => $status,
-			'data'   => json_encode( $font_data ),
+			'data'   => wp_json_encode( $font_data ),
 		);
 
 		if ( update_option( 'ec_icons_fonts', $options ) ) {
@@ -128,7 +165,6 @@ class SaveFont_ECIcons extends ECIcons {
 		} else {
 			return 'updatefailed';
 		}
-
 	}
 
 	/**
@@ -148,12 +184,33 @@ class SaveFont_ECIcons extends ECIcons {
 
 			$data = json_decode( $options[ $file_name ]['data'], true );
 
-			// remove option
+			// Validate and sanitize file paths.
+			$upload_dir = (string) ec_icons_manager()->upload_dir;
+			$file_path  = realpath( $upload_dir . '/' . $data['file_name'] );
+			$json_path  = realpath( $upload_dir . '/' . $data['name'] . '.json' );
+
+			// Ensure the file paths are within the upload directory.
+			if ( strpos( $file_path, $upload_dir ) !== 0 || strpos( $json_path, $upload_dir ) !== 0 ) {
+					$result = array(
+						'status_save' => 'deletefailed',
+						'message'     => 'Invalid file path',
+					);
+					echo wp_json_encode( $result );
+					die();
+			}
+
+			// remove option.
 			unset( $options[ $file_name ] );
 
-			// remove file
-			$this->rrmdir( ec_icons_manager()->upload_dir . '/' . $data['file_name'] );
-			unlink( ec_icons_manager()->upload_dir . '/' . $data['name'] . '.json' );
+			// remove file.
+			$dir_path = ec_icons_manager()->upload_dir . '/' . str_replace( '.zip', '', $data['file_name'] );
+			if ( is_dir( $dir_path ) ) {
+				$this->rrmdir( $dir_path );
+			} else if ( is_dir( ec_icons_manager()->upload_dir . '/' . $data['file_name'] ) ) {
+				// fallback for previous versions.
+				$this->rrmdir( ec_icons_manager()->upload_dir . '/' . $data['file_name'] );
+			}
+			wp_delete_file( ec_icons_manager()->upload_dir . '/' . $data['name'] . '.json' );
 
 			$result = array(
 				'name'        => $file_name,
@@ -166,7 +223,7 @@ class SaveFont_ECIcons extends ECIcons {
 				new MergeCss_ECIcons();
 			}
 
-			echo json_encode( $result );
+			echo wp_json_encode( $result );
 
 		} else {
 
@@ -174,7 +231,7 @@ class SaveFont_ECIcons extends ECIcons {
 				'status_save' => 'deletefailed',
 			);
 
-			echo json_encode( $result );
+			echo wp_json_encode( $result );
 
 		}
 
@@ -202,11 +259,13 @@ class SaveFont_ECIcons extends ECIcons {
 
 				$font_data = $this->get_config_font( $font_decode['file_name'] );
 
-				if ( ! $font_data ) continue;
+				if ( ! $font_data ) {
+					continue;
+				}
 
 				$newoptions[ $font_data['name'] ] = array(
 					'status' => '1',
-					'data'   => json_encode( $font_data ),
+					'data'   => wp_json_encode( $font_data ),
 				);
 
 			}
@@ -218,7 +277,7 @@ class SaveFont_ECIcons extends ECIcons {
 
 		$result                 = array();
 		$result['status_regen'] = 'regen';
-		echo json_encode( $result );
+		echo wp_json_encode( $result );
 
 		die();
 	}

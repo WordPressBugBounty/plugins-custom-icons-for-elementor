@@ -9,8 +9,8 @@
 * @since     0.1.0
 */
 
-if( ! defined( 'ABSPATH' ) ) {
-    return;
+if ( ! defined( 'ABSPATH' ) ) {
+  return;
 }
 
 $options = get_option( 'ec_icons_fonts' );
