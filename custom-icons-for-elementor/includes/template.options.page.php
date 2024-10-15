@@ -37,10 +37,10 @@ $options = get_option( 'ec_icons_fonts' );
 										<h4 class="eci-box-content-title"><?php esc_html_e( 'Create a new Icon Font', 'custom-icons-for-elementor' ); ?></h4>
 										<span class="eci-box-content-text">
 										<?php
-											/* translators: Options page step 1. KSES set to a, br, and i.  */
 											echo sprintf( 
 												wp_kses( 
-													__( 'Visit <a href="%s" target="_blank">Fontello</a> and select the icons you would like to use. You can even upload custom SVG icons of your own on Fontello, whether they be custom made or from a source like <a href="%s" target="_blank">Flaticon!</a>', 'custom-icons-for-elementor' ), 
+													/* translators: Options page step 1. KSES set to a, br, and i.  */
+													__( 'Visit <a href="%1$s" target="_blank">Fontello</a> and select the icons you would like to use. You can even upload custom SVG icons of your own on Fontello, whether they be custom made or from a source like <a href="%2$s" target="_blank">Flaticon!</a>', 'custom-icons-for-elementor' ), 
 													array(  
 														'a' => array( 
 															'href' => array(),
@@ -80,9 +80,9 @@ $options = get_option( 'ec_icons_fonts' );
 										<h4 class="eci-box-content-title"><?php esc_html_e( 'Use Your Icons', 'custom-icons-for-elementor' ); ?></h4>
 										<span class="eci-box-content-text">
 										<?php
-											/* translators: Options page step 3. KSES set to a, br, and i.  */
 											echo sprintf( 
 												wp_kses( 
+													/* translators: Options page step 3. KSES set to a, br, and i.  */
 													__( 'You will now see your custom icons in all Elementor elements that have icon selectors in them.<br><br>Looking for more help? You can watch an instructional video by WPBuilders <a href="%s" target="_blank">here.</a>', 'custom-icons-for-elementor' ), 
 													array(  
 														'a' => array( 
@@ -197,7 +197,7 @@ $options = get_option( 'ec_icons_fonts' );
 										<div class="iconlist hide">
 											<?php
 											foreach($icons as $iconkey => $iconcode){
-												echo '<div><i class="eci ' . $iconkey . '" style="font-size: 16px; margin-right: 10px;"></i><span>' . $iconkey . '</span></div>';
+												echo '<div><i class="eci ' . esc_attr( $iconkey ) . '" style="font-size: 16px; margin-right: 10px;"></i><span>' . esc_html( $iconkey ) . '</span></div>';
 											}
 											?>
 										</div>

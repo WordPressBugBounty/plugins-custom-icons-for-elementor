@@ -112,6 +112,9 @@ jQuery(document).ready(function($) {
 						else if ( response.status_save === 'invalidfiletype' ) {
 							alert( EC_ICONS.invalidfiletype );
 						}
+						else if ( response.status_save === 'invalidfile' ) {
+							alert( EC_ICONS.invalidfiletype );
+						}
 						else if ( response.status_save === 'deletefailed' ) {
 							alert( EC_ICONS.deletefailed );
 						}

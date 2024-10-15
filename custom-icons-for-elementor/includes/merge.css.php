@@ -116,7 +116,9 @@ class MergeCss_ECIcons extends ECIcons {
 			$wp_filesystem->put_contents( ec_icons_manager()->upload_dir . '/merged-icons-font.css', $css_content );
 			update_option( 'eci_css_timestamp', time(), true );
 		} else {
-			error_log( 'Error saving Fontello CSS file to: ' . ec_icons_manager()->upload_dir );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'Error saving Fontello CSS file to: ' . ec_icons_manager()->upload_dir );
+			}
 		}
 	}
 

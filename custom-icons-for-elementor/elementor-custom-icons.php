@@ -2,13 +2,13 @@
 /*
 Plugin Name:       Custom Icons for Elementor
 Description:       Add custom icon fonts to the built in Elementor controls
-Version:           0.3.2
+Version:           0.3.3
 Author:            Michael Bourne
 Author URI:        https://michaelbourne.ca
 License:           GPL3
 Requires at least: 5.4
 Tested up to:      6.6.2
-Stable tag:        0.3.2
+Stable tag:        0.3.3
 Requires PHP:      7.4
 License URI:       https://www.gnu.org/licenses/gpl-3.0.en.html
 Text Domain:       custom-icons-for-elementor
@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 defined( 'ECIcons_ROOT' ) or define( 'ECIcons_ROOT', dirname( __FILE__ ) );
 defined( 'ECIcons_URI' ) or define( 'ECIcons_URI', plugin_dir_url( __FILE__ ) );
-defined( 'ECIcons_VERSION' ) or define( 'ECIcons_VERSION', '0.3.2' );
+defined( 'ECIcons_VERSION' ) or define( 'ECIcons_VERSION', '0.3.3' );
 defined( 'ECIcons_UPLOAD' ) or define( 'ECIcons_UPLOAD', 'elementor_icons_files' );
 
 /**
@@ -137,7 +137,7 @@ class ECIcons {
 		$this->upload_url  = $upload['baseurl'] . '/' . ECIcons_UPLOAD;
 
 		// set plugin version.
-		$this->version = '0.3.2';
+		$this->version = '0.3.3';
 
 		// SSL fix because WordPress core function wp_upload_dir() doesn't check protocol.
 		if ( is_ssl() ) {
@@ -244,6 +244,7 @@ class ECIcons {
 				'remove'				=> __( 'Icon Font family removed', 'custom-icons-for-elementor' ),
 				'deletefailed'  => __( 'Plugin failed to delete the font files.', 'custom-icons-for-elementor' ),
 				'invalidfiletype' => __( 'Invalid file type. Please upload a valid Fontello ZIP file.', 'custom-icons-for-elementor' ),
+				'invalidfile'   => __( 'Invalid file. Please upload a valid Fontello ZIP file.', 'custom-icons-for-elementor' ),
 			);
 			wp_localize_script( 'elementor-custom-icons', 'EC_ICONS', $eci_script );
 		}
@@ -258,7 +259,7 @@ class ECIcons {
 
 			$modtime = get_option( 'eci_css_timestamp' );
 			if ( ! $modtime ) {
-				$modtime = mt_rand(); }
+				$modtime = wp_rand(); }
 			wp_enqueue_style( 'eci-icon-fonts', esc_url( $this->upload_url . '/merged-icons-font.css' ), false, $modtime );
 		}
 	}
@@ -272,7 +273,7 @@ class ECIcons {
 			if ( file_exists( $this->upload_dir . '/merged-icons-font.css' ) ) {
 				$modtime = get_option( 'eci_css_timestamp' );
 				if ( ! $modtime ) {
-					$modtime = mt_rand(); }
+					$modtime = wp_rand(); }
 				echo '<link rel="stylesheet" type="text/css" href="' . esc_url( $this->upload_url ) . '/merged-icons-font.css?ver=' . esc_attr( $modtime ) . '">';
 			}
 		}
@@ -501,11 +502,12 @@ class ECIcons {
 					if ( is_dir( $dir . '/' . $object ) ) {
 						$this->rrmdir( $dir . '/' . $object );
 					} else {
-						unlink( $dir . '/' . $object );
+						wp_delete_file( $dir . '/' . $object );
 					}
 				}
 			}
-			rmdir( $dir );
+			global $wp_filesystem;
+			$wp_filesystem->rmdir( $dir, true );
 		}
 	}
 

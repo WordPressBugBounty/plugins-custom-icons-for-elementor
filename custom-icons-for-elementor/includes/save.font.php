@@ -55,7 +55,7 @@ class SaveFont_ECIcons extends ECIcons {
 
 			if ( ! class_exists( 'ZipArchive' ) ) {
 				$result['status_save'] = 'failedopen';
-				echo json_encode( $result );
+				echo wp_json_encode( $result );
 				die();
 			}
 
@@ -63,18 +63,34 @@ class SaveFont_ECIcons extends ECIcons {
 
 			$result = array();
 
-			if ( ! empty( $_FILES ) && ! empty( $_FILES['source_file'] ) ) {
+			if (
+				! empty( $_FILES )
+				&& ! empty( $_FILES['source_file'] )
+				&& ! empty( $_FILES['source_file']['name'] )
+				&& ! empty( $_FILES['source_file']['tmp_name'] )
+			 ) {
+
+				// Sanitize file name
+				$sanitized_file_name = sanitize_file_name( $_FILES['source_file']['name'] );
 
 				// Check file type.
-				$file_type = wp_check_filetype( $_FILES['source_file']['name'] );
+				$file_type = wp_check_filetype( $sanitized_file_name );
 				if ( 'zip' !== $file_type['ext'] ) {
 						$result['status_save'] = 'invalidfiletype';
-						echo json_encode( $result );
+						echo wp_json_encode( $result );
+						die();
+				}
+
+				// Validate the temporary file
+				$tmp_file = $_FILES['source_file']['tmp_name'];
+				if ( ! is_uploaded_file( $tmp_file ) ) {
+						$result['status_save'] = 'invalidfile';
+						echo wp_json_encode( $result );
 						die();
 				}
 
 				$zip = new ZipArchive();
-				$res = $zip->open( $_FILES['source_file']['tmp_name'] );
+				$res = $zip->open( $tmp_file );
 				if ( true === $res ) {
 					// Check for PHP files in the archive.
 					for ( $i = 0; $i < $zip->numFiles; $i++ ) {
@@ -111,7 +127,7 @@ class SaveFont_ECIcons extends ECIcons {
 					$result['first_icon']  = $first_icon;
 					$iconlist              = '';
 					foreach ( $icons as $iconkey => $iconcode ) {
-						$iconlist .= '<div><i class="eci ' . $iconkey . '" style="font-size: 16px;"></i><span>' . $iconkey . '</span></div>';
+						$iconlist .= '<div><i class="eci ' . esc_attr( $iconkey ) . '" style="font-size: 16px;"></i><span>' . esc_html( $iconkey ) . '</span></div>';
 					}
 					$result['iconlist'] = $iconlist;
 
