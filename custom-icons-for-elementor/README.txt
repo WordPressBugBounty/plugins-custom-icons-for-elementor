@@ -4,7 +4,7 @@ Donate link: https://www.paypal.me/yycpro
 Tags: elementor, icons, fontello, icon fonts
 Requires at least: 5.4
 Tested up to: 6.6.2
-Stable tag: 0.3.3
+Stable tag: 0.3.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.en.html
 
@@ -62,6 +62,9 @@ Removing this plugin will render your custom icons to be deleted. Take care to u
 None yet
 
 == Changelog ==
+
+= 0.3.4 =
+* Fix: further restrict file uploads to parse out unused files.
 
 = 0.3.3 =
 * Fix: WP Plugin check recommendations

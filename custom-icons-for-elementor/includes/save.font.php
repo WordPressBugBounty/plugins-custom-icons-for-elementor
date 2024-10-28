@@ -30,7 +30,7 @@ class SaveFont_ECIcons extends ECIcons {
 	 */
 	public function init() {
 
-		$action = $this->getRequest( 'action' );
+		$action = $this->getRequest( 'eci_action' );
 
 		// ajax events.
 		if ( ! empty( $action ) && is_callable( array( $this, $action ) ) ) {
@@ -59,7 +59,7 @@ class SaveFont_ECIcons extends ECIcons {
 				die();
 			}
 
-			$file_name = str_replace('.zip', '', $this->getRequest( 'file_name', 'font' ) ) ;
+			$file_name = str_replace( '.zip', '', $this->getRequest( 'file_name', 'font' ) );
 
 			$result = array();
 
@@ -91,22 +91,51 @@ class SaveFont_ECIcons extends ECIcons {
 
 				$zip = new ZipArchive();
 				$res = $zip->open( $tmp_file );
+
 				if ( true === $res ) {
-					// Check for PHP files in the archive.
+					$allowed_extensions = array( 'eot', 'svg', 'ttf', 'woff', 'woff2', 'css', 'json' );
+					$extract_dir        = $this->upload_dir . '/' . sanitize_file_name( $file_name );
+
+					if ( ! is_dir( $extract_dir ) ) {
+						mkdir( $extract_dir, 0755, true );
+					}
+
 					for ( $i = 0; $i < $zip->numFiles; $i++ ) {
-						$stat = $zip->statIndex( $i );
-						$file_extension = pathinfo( $stat['name'], PATHINFO_EXTENSION );
-						if ( strtolower( $file_extension ) === 'php' ) {
-								$result['status_save'] = 'invalidfiletype';
+						$stat             = $zip->statIndex( $i );
+						$file_name_in_zip = $stat['name'];
+						$file_extension   = strtolower( pathinfo( $file_name_in_zip, PATHINFO_EXTENSION ) );
+
+						// Skip unsupported files
+						if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
+							continue;
+						}
+
+						// Generate the target path, keeping the original folder structure
+						$relative_path = ltrim( $file_name_in_zip, '/' ); // Remove leading slashes
+						$target_path   = $extract_dir . '/' . $relative_path;
+
+						// Create the directory structure if it doesn't exist
+						$target_dir = dirname( $target_path );
+						if ( ! is_dir( $target_dir ) ) {
+							mkdir( $target_dir, 0755, true );
+						}
+
+						// Ensure no path traversal (the extracted path should stay within the intended directory)
+						if ( strpos( realpath( $target_dir ), realpath( $extract_dir ) ) === 0 ) {
+							// Copy the file to the target location
+							if ( ! copy( 'zip://' . $tmp_file . '#' . $file_name_in_zip, $target_path ) ) {
+								$result['status_save'] = 'failedcopy';
 								echo wp_json_encode( $result );
-								$zip->close();
 								die();
+							}
+							chmod( $target_path, 0644 ); // Secure file permissions
 						}
 					}
 
-					$ex = $zip->extractTo( $this->upload_dir . '/' . $file_name );
 					$zip->close();
-					if ( false === $ex ) {
+
+					// Verify if any files were extracted successfully
+					if ( count( glob( $extract_dir . '/*', GLOB_NOSORT ) ) === 0 ) {
 						$result['status_save'] = 'failedextract';
 						echo wp_json_encode( $result );
 						die();
@@ -222,7 +251,7 @@ class SaveFont_ECIcons extends ECIcons {
 			$dir_path = ec_icons_manager()->upload_dir . '/' . str_replace( '.zip', '', $data['file_name'] );
 			if ( is_dir( $dir_path ) ) {
 				$this->rrmdir( $dir_path );
-			} else if ( is_dir( ec_icons_manager()->upload_dir . '/' . $data['file_name'] ) ) {
+			} elseif ( is_dir( ec_icons_manager()->upload_dir . '/' . $data['file_name'] ) ) {
 				// fallback for previous versions.
 				$this->rrmdir( ec_icons_manager()->upload_dir . '/' . $data['file_name'] );
 			}

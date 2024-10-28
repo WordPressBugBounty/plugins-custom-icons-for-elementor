@@ -2,13 +2,13 @@
 /*
 Plugin Name:       Custom Icons for Elementor
 Description:       Add custom icon fonts to the built in Elementor controls
-Version:           0.3.3
+Version:           0.3.4
 Author:            Michael Bourne
 Author URI:        https://michaelbourne.ca
 License:           GPL3
 Requires at least: 5.4
 Tested up to:      6.6.2
-Stable tag:        0.3.3
+Stable tag:        0.3.4
 Requires PHP:      7.4
 License URI:       https://www.gnu.org/licenses/gpl-3.0.en.html
 Text Domain:       custom-icons-for-elementor
@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 defined( 'ECIcons_ROOT' ) or define( 'ECIcons_ROOT', dirname( __FILE__ ) );
 defined( 'ECIcons_URI' ) or define( 'ECIcons_URI', plugin_dir_url( __FILE__ ) );
-defined( 'ECIcons_VERSION' ) or define( 'ECIcons_VERSION', '0.3.3' );
+defined( 'ECIcons_VERSION' ) or define( 'ECIcons_VERSION', '0.3.4' );
 defined( 'ECIcons_UPLOAD' ) or define( 'ECIcons_UPLOAD', 'elementor_icons_files' );
 
 /**
